@@ -94,7 +94,7 @@ def discount_and_normalize_rewards(all_rewards, discount_rate):
 num_game_rounds = 200
 max_game_steps = 1000
 num_episodes = 50
-discount_rate = 0.8
+discount_rate = 0.95
 
 env = gym.make('CartPole-v1')
 
