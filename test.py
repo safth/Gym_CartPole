@@ -32,9 +32,9 @@ logits = tf.layers.dense(hidden_layer,num_outputs)
 output = tf.nn.sigmoid(logits)
 
 prob = tf.concat(axis=1,values=[output,1-output])
-action2 = tf.multinomial(prob,num_samples=1) # this is the action done, left or right [L,R]
-y = 1.0 - tf.to_float(action2)
-action = logits
+action = tf.multinomial(prob,num_samples=1) # this is the action done, left or right [L,R]
+
+y = 1.0 - tf.to_float(action)
 
 #optimizer
 cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=y,logits=logits)
@@ -57,7 +57,6 @@ for gradient, variable in gradients_and_variables:
 training_op = optimizer.apply_gradients(grads_and_vars_feed)
 
 init = tf.global_variables_initializer()
-saver =tf.train.Saver()
 
 ## function to calculate the rewards discount
 
@@ -91,8 +90,8 @@ def discount_and_normalize_rewards(all_rewards, discount_rate):
 ##===========================================================================
 
 
-num_game_rounds = 500
-num_episodes = 50
+num_game_rounds = 1
+num_episodes = 1
 discount_rate = 0.95
 
 env = gym.make('CartPole-v1')
@@ -117,12 +116,10 @@ with tf.Session() as sess:
             steps=0
             while not done:
                 action_val, gradient_val = sess.run([action,gradients],feed_dict={X:observations.reshape(1,num_input)})
-                print(action)
                 observations, reward, done, info  = env.step(action_val[0][0])
                 current_rewards.append(reward)
                 current_gradients.append(gradient_val)
                 steps += 1
-
 
             all_rewards.append(current_rewards)
             all_gradients.append(current_gradients)
@@ -146,14 +143,10 @@ with tf.Session() as sess:
 
         sess.run(training_op,feed_dict=feed_dict)
 
-    print('SAVING GRAPH AND SESSION')
-    meta_graph_def = tf.train.export_meta_graph(filename='/model/my-model.meta')
-    saver.save(sess,'/model/my-model')
 
-import matplotlib.pyplot as plt
-plt.plot(mean_score)
-plt.show()
-
+#############################################
+### RUN TRAINED MODEL ON ENVIRONMENT #######
+###########################################
 
 #############################################
 ### RUN TRAINED MODEL ON ENVIRONMENT #######
@@ -165,8 +158,8 @@ for game in range(10):
     with tf.Session() as sess:
 
         # https://www.tensorflow.org/api_guides/python/meta_graph
-        new_saver = tf.train.import_meta_graph('/Users/simonboivin/Documents/model/my-extreme-step-model.meta')
-        new_saver.restore(sess,'/Users/simonboivin/Documents/model/my-extreme-step-model')
+        new_saver = tf.train.import_meta_graph('./model/my-extreme-step-model.meta')
+        new_saver.restore(sess,'./model/my-extreme-step-model')
         i=0
         while True:
             env.render()
